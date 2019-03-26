@@ -17,7 +17,7 @@ var getQueryString = (lang, units, exclude = [], extend = false) => {
         if(extend){
             queryString+='extend=hourly';
         }
-        resolve(queryString); 
+        resolve(queryString);
     });
 }
 
@@ -40,7 +40,7 @@ class simplesky{
     /**
      * Interface with the DarkSky API to get weather data for your location, you can tweak what data is sent
      * back to you through the provided arguments to help save on time and data
-     * @param {string} location Natural language entry of location 
+     * @param {string} location Natural language entry of location
      * @param {number} lat Exact latitude coordinate, optional
      * @param {number} lng Exact longitude coordinate, optional
      * @param {Array} exclude Array containing string of blocks to exclude, optional
@@ -88,7 +88,7 @@ class simplesky{
     /**
      * Interface with Dark Sky's Time Machine capabilities to get weather data for
      * the past or future
-     * @param {string} location Natural language entry of location 
+     * @param {string} location Natural language entry of location
      * @param {string|number} time Offset from current time of desired weather data or UNIX timestamp, see documentation for input details
      * @param {number} lat Exact latitude coordinate, optional
      * @param {number} lng Exact longitude coordinate, optional
@@ -138,10 +138,10 @@ class simplesky{
             }
         });
     }
-    
+
     /**
      * Get complete weather data for your location
-     * @param {string} location Natural language entry of location  
+     * @param {string} location Natural language entry of location
      * @param {number} lat Exact latitude coordinate, optional
      * @param {number} lng Exact longitude coordinate, optional
      */
@@ -151,7 +151,7 @@ class simplesky{
 
     /**
      * Retrieve only the current weather information
-     * @param {string} location Natural language entry of location 
+     * @param {string} location Natural language entry of location
      * @param {number} lat Exact latitude coordinate, optional
      * @param {number} lng Exact longituted coordinate, optional
      */
@@ -165,10 +165,10 @@ class simplesky{
             });
         });
     }
-    
+
     /**
      * Retrieve only the hourly weather information
-     * @param {string} location Natural language entry of location 
+     * @param {string} location Natural language entry of location
      * @param {number} lat Exact latitude coordinate, optional
      * @param {number} lng Exact longitude coordinate, optional
      * @param {boolean} extend Provide data for the next 168 hours, optional
@@ -186,7 +186,7 @@ class simplesky{
 
     /**
      * Retrieve only the minutely weather information
-     * @param {string} location Natural language entry of location 
+     * @param {string} location Natural language entry of location
      * @param {number} lat Exact latitude coordinate, optional
      * @param {number} lng Exact longitude coordinate, optional
      */
@@ -207,7 +207,7 @@ class simplesky{
 
     /**
      * Retrieve only the daily weather information
-     * @param {string} location Natural language entry of location 
+     * @param {string} location Natural language entry of location
      * @param {number} lat Exact latitude coordinate, optional
      * @param {number} lng Exact longitude coordinate, optional
      */
@@ -224,7 +224,7 @@ class simplesky{
 
     /**
      * Return an object with the exact coordinates of your specified location
-     * @param {string} location  
+     * @param {string} location
      */
     getCoordinates(location){
         return new Promise((resolve,reject) => {
@@ -246,6 +246,38 @@ class simplesky{
                 }
             });
         });
+    }
+
+    /**
+     * Returns an object {name, id} of the place in search
+     * @param params {object} Object with reverse geocoding parameters. Docs: https://developers.google.com/maps/documentation/geocoding/intro#ReverseGeocoding
+     * You must provide at least {latlng: '0.0,0.0'}
+     */
+    getPlaceNameFromCoordinates(params = {result_type: 'locality'}) {
+        return new Promise((resolve, reject) => {
+            let paramsString = Object.keys(params).reduce((acc, key, i)=> {
+                return `${acc}${i ? '&' : ''}${key}=${params[key]}`
+            }, '')
+
+            const url = `https://maps.googleapis.com/maps/api/geocode/json?${paramsString}&key=${this.mapAPIKey}`
+            request({
+                url,
+                json: true
+            }, (error, response, body) => {
+                if(error){
+                    reject(new Error("Unable to connect to Google Services"));
+                }else if(body.status === 'ZERO_RESULTS'){
+                    reject(new Error("No place found at provided coordinates"));
+                }else if(body.status === 'OK'){
+
+                    let results = {
+                        name: body.results[0].formatted_address,
+                        id: body.results[0].place_id
+                    }
+                    resolve(results);
+                }
+            })
+        })
     }
     /**
      * Return a unicode timestamp with the current time
